@@ -160,7 +160,9 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	log.V(1).Info("info on dev:")
-	msg = fmt.Sprintf("%v\n", dev)
+	msg = fmt.Sprintf("\n\ndev.Status.Active: %v\n"+
+		"dev.Status.LastScheduleTime: %v\n\n",
+		dev.Status.Active, dev.Status.LastScheduleTime)
 	log.V(1).Info(msg)
 
 	log.V(1).Info("job count", "active jobs", len(activeJobs),
