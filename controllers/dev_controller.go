@@ -76,6 +76,15 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	var devList webappv1.DevList
+	if err := r.List(ctx, &devList); err != nil {
+		log.Error(err, "unable to fetch devList ..")
+		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on deleted requests.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
 	msg := fmt.Sprintf("\n\nDEBUG:__________(start)"+
 		"\n\ndev.Name: %v\ndev.Status.Active:%v"+
 		"\n\nDEBUG:__________(end)\n\n\n", dev.Name, dev.Status.Active)
