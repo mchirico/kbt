@@ -18,9 +18,11 @@ package controllers
 
 import (
 	"context"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	"github.com/go-logr/logr"
+	kbatch "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -55,6 +57,7 @@ type Clock interface {
 var (
 	scheduledTimeAnnotation = "webapp.dev.cwxstat.io/scheduled-at"
 	jobOwnerKey             = ".metadata.controller"
+	apiGVStr                = webappv1.GroupVersion.String()
 )
 
 func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
@@ -72,6 +75,30 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *DevReconciler) SetupWithManager(mgr ctrl.Manager) error {
+
+	// set up a real clock, since we're not in a test
+	if r.Clock == nil {
+		r.Clock = realClock{}
+	}
+
+	if err := mgr.GetFieldIndexer().IndexField(&kbatch.Job{}, jobOwnerKey, func(rawObj runtime.Object) []string {
+		// grab the job object, extract the owner...
+		job := rawObj.(*kbatch.Job)
+		owner := metav1.GetControllerOf(job)
+		if owner == nil {
+			return nil
+		}
+		// ...make sure it's a CronJob...
+		if owner.APIVersion != apiGVStr || owner.Kind != "Dev" {
+			return nil
+		}
+
+		// ...and if so, return it
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&webappv1.Dev{}).
 		Complete(r)
