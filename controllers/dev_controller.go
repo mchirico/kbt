@@ -76,7 +76,9 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	msg := fmt.Sprintf("dev.Name: %v dev.Status:%v", dev.Name, dev.Status)
+	msg := fmt.Sprintf("\n\nDEBUG:__________(start)"+
+		"\n\ndev.Name: %v\ndev.Status.Active:%v"+
+		"\n\nDEBUG:__________(end)\n\n\n", dev.Name, dev.Status.Active)
 	log.Info(msg)
 
 	var childJobs kbatch.JobList
@@ -157,22 +159,27 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		dev.Status.Active = append(dev.Status.Active, *jobRef)
 	}
 
+	log.V(1).Info("info on dev:")
+	msg = fmt.Sprintf("%v\n", dev)
+	log.V(1).Info(msg)
+
 	log.V(1).Info("job count", "active jobs", len(activeJobs),
 		"successful jobs", len(successfulJobs), "failed jobs", len(failedJobs))
 
-	///*
-	//	Using the date we've gathered, we'll update the status of our CRD.
-	//	Just like before, we use our client.  To specifically update the status
-	//	subresource, we'll use the `Status` part of the client, with the `Update`
-	//	method.
-	//	The status subresource ignores changes to spec, so it's less likely to conflict
-	//	with any other updates, and can have separate permissions.
-	//*/
+	/*
+		Using the date we've gathered, we'll update the status of our CRD.
+		Just like before, we use our client.  To specifically update the status
+		subresource, we'll use the `Status` part of the client, with the `Update`
+		method.
+		The status subresource ignores changes to spec, so it's less likely to conflict
+		with any other updates, and can have separate permissions.
+	*/
+
 	//if err := r.Status().Update(ctx, &dev); err != nil {
 	//	log.Error(err, "unable to update CronJob status")
 	//	return ctrl.Result{}, err
 	//}
-	//
+
 	///*
 	//	Once we've updated our status, we can move on to ensuring that the status of
 	//	the world matches what we want in our spec.
