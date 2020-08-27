@@ -18,7 +18,9 @@ package controllers
 
 import (
 	"context"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ref "k8s.io/client-go/tools/reference"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -74,7 +76,9 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	msg := fmt.Sprintf("dev.Name: %v dev.Status:%v", dev.Name, dev.Status)
+	msg := fmt.Sprintf("\n\nDEBUG:__________(start)"+
+		"\n\ndev.Name: %v\ndev.Status.Active:%v"+
+		"\n\nDEBUG:__________(end)\n\n\n", dev.Name, dev.Status.Active)
 	log.Info(msg)
 
 	var childJobs kbatch.JobList
@@ -83,95 +87,99 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	//
-	//// find the active list of jobs
-	//var activeJobs []*kbatch.Job
-	//var successfulJobs []*kbatch.Job
-	//var failedJobs []*kbatch.Job
-	//var mostRecentTime *time.Time // find the last run so we can update the status
-	//
-	//isJobFinished := func(job *kbatch.Job) (bool, kbatch.JobConditionType) {
-	//	for _, c := range job.Status.Conditions {
-	//		if (c.Type == kbatch.JobComplete || c.Type == kbatch.JobFailed) && c.Status == corev1.ConditionTrue {
-	//			return true, c.Type
-	//		}
-	//	}
-	//
-	//	return false, ""
-	//}
-	//
-	//getScheduledTimeForJob := func(job *kbatch.Job) (*time.Time, error) {
-	//	timeRaw := job.Annotations[scheduledTimeAnnotation]
-	//	if len(timeRaw) == 0 {
-	//		return nil, nil
-	//	}
-	//
-	//	timeParsed, err := time.Parse(time.RFC3339, timeRaw)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	return &timeParsed, nil
-	//}
-	//
-	//for i, job := range childJobs.Items {
-	//	_, finishedType := isJobFinished(&job)
-	//	switch finishedType {
-	//	case "": // ongoing
-	//		activeJobs = append(activeJobs, &childJobs.Items[i])
-	//	case kbatch.JobFailed:
-	//		failedJobs = append(failedJobs, &childJobs.Items[i])
-	//	case kbatch.JobComplete:
-	//		successfulJobs = append(successfulJobs, &childJobs.Items[i])
-	//	}
-	//
-	//	// We'll store the launch time in an annotation, so we'll reconstitute that from
-	//	// the active jobs themselves.
-	//	scheduledTimeForJob, err := getScheduledTimeForJob(&job)
-	//	if err != nil {
-	//		log.Error(err, "unable to parse schedule time for child job", "job", &job)
-	//		continue
-	//	}
-	//	if scheduledTimeForJob != nil {
-	//		if mostRecentTime == nil {
-	//			mostRecentTime = scheduledTimeForJob
-	//		} else if mostRecentTime.Before(*scheduledTimeForJob) {
-	//			mostRecentTime = scheduledTimeForJob
-	//		}
-	//	}
-	//}
-	//
-	//if mostRecentTime != nil {
-	//	dev.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
-	//} else {
-	//	dev.Status.LastScheduleTime = nil
-	//}
-	//dev.Status.Active = nil
-	//
-	//for _, activeJob := range activeJobs {
-	//	jobRef, err := ref.GetReference(r.Scheme, activeJob)
-	//	if err != nil {
-	//		log.Error(err, "unable to make reference to active job", "job", activeJob)
-	//		continue
-	//	}
-	//	dev.Status.Active = append(dev.Status.Active, *jobRef)
-	//}
-	//
-	//log.V(1).Info("job count", "active jobs", len(activeJobs),
-	//	"successful jobs", len(successfulJobs), "failed jobs", len(failedJobs))
-	//
-	///*
-	//	Using the date we've gathered, we'll update the status of our CRD.
-	//	Just like before, we use our client.  To specifically update the status
-	//	subresource, we'll use the `Status` part of the client, with the `Update`
-	//	method.
-	//	The status subresource ignores changes to spec, so it's less likely to conflict
-	//	with any other updates, and can have separate permissions.
-	//*/
+	// find the active list of jobs
+	var activeJobs []*kbatch.Job
+	var successfulJobs []*kbatch.Job
+	var failedJobs []*kbatch.Job
+	var mostRecentTime *time.Time // find the last run so we can update the status
+
+	isJobFinished := func(job *kbatch.Job) (bool, kbatch.JobConditionType) {
+		for _, c := range job.Status.Conditions {
+			if (c.Type == kbatch.JobComplete || c.Type == kbatch.JobFailed) && c.Status == corev1.ConditionTrue {
+				return true, c.Type
+			}
+		}
+
+		return false, ""
+	}
+
+	getScheduledTimeForJob := func(job *kbatch.Job) (*time.Time, error) {
+		timeRaw := job.Annotations[scheduledTimeAnnotation]
+		if len(timeRaw) == 0 {
+			return nil, nil
+		}
+
+		timeParsed, err := time.Parse(time.RFC3339, timeRaw)
+		if err != nil {
+			return nil, err
+		}
+		return &timeParsed, nil
+	}
+
+	for i, job := range childJobs.Items {
+		_, finishedType := isJobFinished(&job)
+		switch finishedType {
+		case "": // ongoing
+			activeJobs = append(activeJobs, &childJobs.Items[i])
+		case kbatch.JobFailed:
+			failedJobs = append(failedJobs, &childJobs.Items[i])
+		case kbatch.JobComplete:
+			successfulJobs = append(successfulJobs, &childJobs.Items[i])
+		}
+
+		// We'll store the launch time in an annotation, so we'll reconstitute that from
+		// the active jobs themselves.
+		scheduledTimeForJob, err := getScheduledTimeForJob(&job)
+		if err != nil {
+			log.Error(err, "unable to parse schedule time for child job", "job", &job)
+			continue
+		}
+		if scheduledTimeForJob != nil {
+			if mostRecentTime == nil {
+				mostRecentTime = scheduledTimeForJob
+			} else if mostRecentTime.Before(*scheduledTimeForJob) {
+				mostRecentTime = scheduledTimeForJob
+			}
+		}
+	}
+
+	if mostRecentTime != nil {
+		dev.Status.LastScheduleTime = &metav1.Time{Time: *mostRecentTime}
+	} else {
+		dev.Status.LastScheduleTime = nil
+	}
+	dev.Status.Active = nil
+
+	for _, activeJob := range activeJobs {
+		jobRef, err := ref.GetReference(r.Scheme, activeJob)
+		if err != nil {
+			log.Error(err, "unable to make reference to active job", "job", activeJob)
+			continue
+		}
+		dev.Status.Active = append(dev.Status.Active, *jobRef)
+	}
+
+	log.V(1).Info("info on dev:")
+	msg = fmt.Sprintf("%v\n", dev)
+	log.V(1).Info(msg)
+
+	log.V(1).Info("job count", "active jobs", len(activeJobs),
+		"successful jobs", len(successfulJobs), "failed jobs", len(failedJobs))
+
+	/*
+		Using the date we've gathered, we'll update the status of our CRD.
+		Just like before, we use our client.  To specifically update the status
+		subresource, we'll use the `Status` part of the client, with the `Update`
+		method.
+		The status subresource ignores changes to spec, so it's less likely to conflict
+		with any other updates, and can have separate permissions.
+	*/
+
 	//if err := r.Status().Update(ctx, &dev); err != nil {
 	//	log.Error(err, "unable to update CronJob status")
 	//	return ctrl.Result{}, err
 	//}
-	//
+
 	///*
 	//	Once we've updated our status, we can move on to ensuring that the status of
 	//	the world matches what we want in our spec.
