@@ -74,14 +74,13 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// your logic here
-	var devList webappv1.DevList
-	if err := r.List(ctx, &devList, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
+	var childJobs kbatch.JobList
+	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
 		return ctrl.Result{}, err
 	}
 
-	for i, job := range devList.Items {
+	for i, job := range childJobs.Items {
 		msg := fmt.Sprintf("i:%v job:%v", i, job)
 		log.Info(msg)
 

@@ -1,0 +1,7 @@
+apiVersion: webapp.dev.cwxstat.io/v1
+kind: Dev
+metadata:
+  name: dev-sample
+spec:
+  # Add fields here
+  foo: bar
