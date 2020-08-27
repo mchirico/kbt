@@ -82,6 +82,7 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		"\n\nDEBUG:__________(end a)\n\n\n", dev.Name, dev.Status.Active, dev)
 	log.Info(msg)
 
+
 	var devList webappv1.DevList
 	if err := r.List(ctx, &devList); err != nil {
 		log.Error(err, "unable to fetch devList ..")
