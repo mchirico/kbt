@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -65,9 +67,10 @@ type DevSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 
 	// TODO: Why not work in my example
+	//      Fixed... needed import... make note in docs
 	// Specifies the job that will be created when executing a CronJob.
 	// webapp.dev.cwxstat.io
-	//JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
+	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
 
 	// +kubebuilder:validation:Minimum=0
 
@@ -88,6 +91,14 @@ type DevSpec struct {
 type DevStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// A list of pointers to currently running jobs.
+	// +optional
+	Active []corev1.ObjectReference `json:"active,omitempty"`
+
+	// Information when was the last time the job was successfully scheduled.
+	// +optional
+	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
