@@ -1,0 +1,7 @@
+domain: dev.cwxstat.io
+repo: github.com/mchirico/kbt
+resources:
+- group: webapp
+  kind: Dev
+  version: v1
+version: "2"

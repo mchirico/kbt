@@ -1,0 +1,20 @@
+# permissions for end users to view devs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dev-viewer-role
+rules:
+- apiGroups:
+  - webapp.dev.cwxstat.io
+  resources:
+  - devs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - webapp.dev.cwxstat.io
+  resources:
+  - devs/status
+  verbs:
+  - get
