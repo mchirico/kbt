@@ -76,6 +76,12 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	msg := fmt.Sprintf("\n\nDEBUG:__________(start a)"+
+		"\n\ndev.Name: %v\ndev.Status.Active:%v"+
+		"\ndev: %v"+
+		"\n\nDEBUG:__________(end a)\n\n\n", dev.Name, dev.Status.Active, dev)
+	log.Info(msg)
+
 	var devList webappv1.DevList
 	if err := r.List(ctx, &devList); err != nil {
 		log.Error(err, "unable to fetch devList ..")
@@ -84,11 +90,17 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	for i, devItem := range devList.Items {
 
-	msg := fmt.Sprintf("\n\nDEBUG:__________(start)"+
-		"\n\ndev.Name: %v\ndev.Status.Active:%v"+
-		"\n\nDEBUG:__________(end)\n\n\n", dev.Name, dev.Status.Active)
-	log.Info(msg)
+		msg = fmt.Sprintf(
+			"\n\nDEBUG:__________(start %v)\n\n"+
+				"devItem.Name: %v\n"+
+				"devItem.Status.Active: %v\n"+
+				"devItem: %v\n"+
+				"\n\nDEBUG:__________(end %v)\n\n\n", i, devItem.Name, devItem.Status.Active, devItem, i)
+		log.Info(msg)
+
+	}
 
 	var childJobs kbatch.JobList
 	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
