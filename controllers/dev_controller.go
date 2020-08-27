@@ -27,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"fmt"
 	webappv1 "github.com/mchirico/kbt/api/v1"
 )
 
@@ -64,11 +65,26 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("dev", req.NamespacedName)
 
+	var dev webappv1.Dev
+	if err := r.Get(ctx, req.NamespacedName, &dev); err != nil {
+		log.Error(err, "unable to fetch dev ..")
+		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on deleted requests.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
 	// your logic here
 	var devList webappv1.DevList
 	if err := r.List(ctx, &devList, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child Jobs")
 		return ctrl.Result{}, err
+	}
+
+	for i, job := range devList.Items {
+		msg := fmt.Sprintf("i:%v job:%v", i, job)
+		log.Info(msg)
+
 	}
 
 	return ctrl.Result{}, nil
