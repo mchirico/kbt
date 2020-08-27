@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,10 +33,28 @@ type DevReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
+	Clock
+}
+
+type realClock struct{}
+
+func (_ realClock) Now() time.Time { return time.Now() }
+
+// clock knows how to get the current time.
+// It can be used to fake out timing for testing.
+type Clock interface {
+	Now() time.Time
 }
 
 // +kubebuilder:rbac:groups=webapp.dev.cwxstat.io,resources=devs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=webapp.dev.cwxstat.io,resources=devs/status,verbs=get;update;patch
+
+// +kubebuilder:rbac:groups=webapp.dev.cwxstat.io,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=webapp.dev.cwxstat.io,resources=jobs/status,verbs=get
+
+var (
+	scheduledTimeAnnotation = "webapp.dev.cwxstat.io/scheduled-at"
+)
 
 func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	_ = context.Background()

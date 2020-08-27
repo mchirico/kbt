@@ -66,6 +66,7 @@ type DevSpec struct {
 
 	// TODO: Why not work in my example
 	// Specifies the job that will be created when executing a CronJob.
+	// webapp.dev.cwxstat.io
 	//JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
 
 	// +kubebuilder:validation:Minimum=0
@@ -101,6 +102,7 @@ type Dev struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 
 // DevList contains a list of Dev
 type DevList struct {

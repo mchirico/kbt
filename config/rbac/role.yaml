@@ -26,3 +26,21 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - webapp.dev.cwxstat.io
+  resources:
+  - jobs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - webapp.dev.cwxstat.io
+  resources:
+  - jobs/status
+  verbs:
+  - get
