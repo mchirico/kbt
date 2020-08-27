@@ -23,13 +23,64 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type ConcurrencyPolicy string
+
+const (
+	// AllowConcurrent allows CronJobs to run concurrently.
+	AllowConcurrent ConcurrencyPolicy = "Allow"
+
+	// ForbidConcurrent forbids concurrent runs, skipping next run if previous
+	// hasn't finished yet.
+	ForbidConcurrent ConcurrencyPolicy = "Forbid"
+
+	// ReplaceConcurrent cancels currently running job and replaces it with a new one.
+	ReplaceConcurrent ConcurrencyPolicy = "Replace"
+)
+
 // DevSpec defines the desired state of Dev
 type DevSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Dev. Edit Dev_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Foo      string `json:"foo,omitempty"`
+	Schedule string `json:"schedule"`
+
+	// Optional deadline in seconds for starting the job if it misses scheduled
+	// time for any reason.  Missed jobs executions will be counted as failed ones.
+	// +optional
+	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty"`
+
+	// Specifies how to treat concurrent executions of a Job.
+	// Valid values are:
+	// - "Allow" (default): allows CronJobs to run concurrently;
+	// - "Forbid": forbids concurrent runs, skipping next run if previous run hasn't finished yet;
+	// - "Replace": cancels currently running job and replaces it with a new one
+	// +optional
+	ConcurrencyPolicy ConcurrencyPolicy `json:"concurrencyPolicy,omitempty"`
+
+	// This flag tells the controller to suspend subsequent executions, it does
+	// not apply to already started executions.  Defaults to false.
+	// +optional
+	Suspend *bool `json:"suspend,omitempty"`
+
+	// TODO: Why not work in my example
+	// Specifies the job that will be created when executing a CronJob.
+	//JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
+
+	// +kubebuilder:validation:Minimum=0
+
+	// The number of successful finished jobs to retain.
+	// This is a pointer to distinguish between explicit zero and not specified.
+	// +optional
+	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty"`
+
+	// +kubebuilder:validation:Minimum=0
+
+	// The number of failed finished jobs to retain.
+	// This is a pointer to distinguish between explicit zero and not specified.
+	// +optional
+	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 }
 
 // DevStatus defines the observed state of Dev

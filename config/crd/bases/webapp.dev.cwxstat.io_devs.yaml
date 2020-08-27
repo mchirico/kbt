@@ -4,7 +4,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.5
+    controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
   name: devs.webapp.dev.cwxstat.io
 spec:
@@ -34,9 +34,42 @@ spec:
         spec:
           description: DevSpec defines the desired state of Dev
           properties:
+            concurrencyPolicy:
+              description: 'Specifies how to treat concurrent executions of a Job.
+                Valid values are: - "Allow" (default): allows CronJobs to run concurrently;
+                - "Forbid": forbids concurrent runs, skipping next run if previous
+                run hasn''t finished yet; - "Replace": cancels currently running job
+                and replaces it with a new one'
+              type: string
+            failedJobsHistoryLimit:
+              description: The number of failed finished jobs to retain. This is a
+                pointer to distinguish between explicit zero and not specified.
+              format: int32
+              minimum: 0
+              type: integer
             foo:
               description: Foo is an example field of Dev. Edit Dev_types.go to remove/update
               type: string
+            schedule:
+              type: string
+            startingDeadlineSeconds:
+              description: Optional deadline in seconds for starting the job if it
+                misses scheduled time for any reason.  Missed jobs executions will
+                be counted as failed ones.
+              format: int64
+              type: integer
+            successfulJobsHistoryLimit:
+              description: The number of successful finished jobs to retain. This
+                is a pointer to distinguish between explicit zero and not specified.
+              format: int32
+              minimum: 0
+              type: integer
+            suspend:
+              description: This flag tells the controller to suspend subsequent executions,
+                it does not apply to already started executions.  Defaults to false.
+              type: boolean
+          required:
+          - schedule
           type: object
         status:
           description: DevStatus defines the observed state of Dev
