@@ -45,7 +45,9 @@ type DevSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Dev. Edit Dev_types.go to remove/update
-	Foo      string `json:"foo,omitempty"`
+	Foo string `json:"foo,omitempty"`
+
+	// +optional
 	Schedule string `json:"schedule"`
 
 	// Optional deadline in seconds for starting the job if it misses scheduled
@@ -66,10 +68,6 @@ type DevSpec struct {
 	// +optional
 	Suspend *bool `json:"suspend,omitempty"`
 
-	// TODO: Why not work in my example
-	//      Fixed... needed import... make note in docs
-	// Specifies the job that will be created when executing a CronJob.
-	// webapp.dev.cwxstat.io
 	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
 
 	// +kubebuilder:validation:Minimum=0
