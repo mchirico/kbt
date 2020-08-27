@@ -178,7 +178,7 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	*/
 
 	//if err := r.Status().Update(ctx, &dev); err != nil {
-	//	log.Error(err, "unable to update CronJob status")
+	//	log.Error(err, "unable to update Dev status")
 	//	return ctrl.Result{}, err
 	//}
 
