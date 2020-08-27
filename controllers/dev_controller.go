@@ -54,13 +54,19 @@ type Clock interface {
 
 var (
 	scheduledTimeAnnotation = "webapp.dev.cwxstat.io/scheduled-at"
+	jobOwnerKey             = ".metadata.controller"
 )
 
 func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("dev", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("dev", req.NamespacedName)
 
 	// your logic here
+	var devList webappv1.DevList
+	if err := r.List(ctx, &devList, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
+		log.Error(err, "unable to list child Jobs")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
