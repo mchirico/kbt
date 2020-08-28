@@ -82,7 +82,6 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		"\n\nDEBUG:__________(end a)\n\n\n", dev.Name, dev.Status.Active, dev)
 	log.Info(msg)
 
-
 	var devList webappv1.DevList
 	if err := r.List(ctx, &devList); err != nil {
 		log.Error(err, "unable to fetch devList ..")
@@ -138,7 +137,14 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return &timeParsed, nil
 	}
 
+	log.Info("\n_____________________________________________________________________________\n")
 	for i, job := range childJobs.Items {
+
+		msg := fmt.Sprintf("\n\nfor i, job := range childJobs.Items\n\n"+
+			"\ni: %v"+
+			"\njob: %v ", i, job)
+		log.Info(msg)
+
 		_, finishedType := isJobFinished(&job)
 		switch finishedType {
 		case "": // ongoing
@@ -199,6 +205,16 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		with any other updates, and can have separate permissions.
 	*/
 
+	dev.Spec.Foo = "mouse"
+
+	if err := r.Update(ctx, &dev); err != nil {
+		log.Error(err, "unable to update Dev")
+		return ctrl.Result{}, err
+	}
+
+	log.V(1).Info("\n\n WOW.... got this far...\n")
+
+	// Odd.. Status doesn't work..
 	//if err := r.Status().Update(ctx, &dev); err != nil {
 	//	log.Error(err, "unable to update Dev status")
 	//	return ctrl.Result{}, err
@@ -281,18 +297,23 @@ func (r *DevReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Clock = realClock{}
 	}
 
+	fmt.Printf("\n\nSetupWithManager....\n\n\n\n")
+
 	if err := mgr.GetFieldIndexer().IndexField(&kbatch.Job{}, jobOwnerKey, func(rawObj runtime.Object) []string {
 		// grab the job object, extract the owner...
 		job := rawObj.(*kbatch.Job)
 		owner := metav1.GetControllerOf(job)
+		fmt.Printf("job: %v, owner: %v\n", job, owner)
 		if owner == nil {
 			return nil
 		}
 		// ...make sure it's a CronJob...
+		fmt.Printf("\nowner.APIVersion: %v owner.Kind: %v\n", owner.APIVersion, owner.Kind)
 		if owner.APIVersion != apiGVStr || owner.Kind != "Dev" {
 			return nil
 		}
 
+		fmt.Printf("here....\n\n\n\n")
 		// ...and if so, return it
 		return []string{owner.Name}
 	}); err != nil {
@@ -301,5 +322,6 @@ func (r *DevReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&webappv1.Dev{}).
+		Owns(&kbatch.Job{}).
 		Complete(r)
 }
