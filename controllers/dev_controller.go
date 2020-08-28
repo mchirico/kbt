@@ -205,6 +205,7 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		with any other updates, and can have separate permissions.
 	*/
 
+	// odd... this works, if we use r.Update
 	dev.Spec.Foo = "mouse"
 
 	if err := r.Update(ctx, &dev); err != nil {
