@@ -208,12 +208,15 @@ func (r *DevReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// odd... this works, if we use r.Update
 	dev.Spec.Foo = "mouse"
 
+	msg = fmt.Sprintf("dev.Status: %v\n", dev.Status)
+
 	if err := r.Update(ctx, &dev); err != nil {
 		log.Error(err, "unable to update Dev")
 		return ctrl.Result{}, err
 	}
 
 	log.V(1).Info("\n\n WOW.... got this far...\n")
+	log.V(1).Info(msg)
 
 	// Odd.. Status doesn't work..
 	//if err := r.Status().Update(ctx, &dev); err != nil {
