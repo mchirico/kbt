@@ -1,0 +1,9 @@
+domain: tutorial.kubebuilder.io
+layout: go.kubebuilder.io/v2
+projectName: CronJob
+repo: github.com/mchirico/CronJob
+resources:
+- group: batch
+  kind: CronJob
+  version: v1
+version: 3-alpha
