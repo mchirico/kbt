@@ -52,12 +52,12 @@ jobs:
         docker login -u="mchirico" -p=${{ secrets.DOCKER }} quay.io
         make
         make install
-        docker build -t quay.io/mchirico/cronjob:test -f Dockerfile .
+        docker build -t quay.io/mchirico/kbt:test -f Dockerfile .
         # problem below: make test seems to want kubeconfig
-        # make docker-build IMG=quay.io/mchirico/cronjob:test
-        docker push quay.io/mchirico/cronjob:test
-        kind load docker-image quay.io/mchirico/cronjob:test
-        make deploy IMG=quay.io/mchirico/cronjob:test
+        # make docker-build IMG=quay.io/mchirico/kbt:test
+        docker push quay.io/mchirico/kbt:test
+        kind load docker-image quay.io/mchirico/kbt:test
+        make deploy IMG=quay.io/mchirico/kbt:test
         kubectl apply -f config/samples/batch_v1_cronjob.yaml
         kubectl get crd|grep 'cronjobs'
 
